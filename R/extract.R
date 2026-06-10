@@ -8859,3 +8859,102 @@ extract.logitr <- function(model,
 #' @export
 setMethod("extract", signature = className("logitr", "logitr"),
           definition = extract.logitr)
+
+
+
+# -- extract.apollo_estimation (Apollo) ----------------------------------------
+
+#' @noRd
+extract.apollo_estimation <- function(model,
+                                      wtpest = NULL,
+                                      se = "rob",
+                                      ...) {
+  # validate 'se' argument
+  if (!se %in% c("rob", "normal", "bs")) {
+    stop("Invalid value for 'se'. Please use one of 'rob', 'normal', or 'bs'.")
+  }
+  # bootstrap SEs must exist in the model object
+  if (se == "bs" && !"bootse" %in% names(model)) {
+    stop("No bootstrapped SE found. The 'model' must contain 'bootse' for se = 'bs'.")
+  }
+
+  # pull out the standard apollo output table
+  settings <- list(printPVal = TRUE)
+  if (is.null(wtpest)) {
+    if (!requireNamespace("apollo", quietly = TRUE)) {
+      stop("The 'apollo' package is required to extract apollo models.\n",
+           "To install it, enter 'install.packages(\"apollo\")'.", call. = FALSE)
+    }
+    if (!requireNamespace("janitor", quietly = TRUE)) {
+      stop("The 'janitor' package is required to extract apollo models.\n",
+           "To install it, enter 'install.packages(\"janitor\")'.", call. = FALSE)
+    }
+    # apollo_modelOutput() prints the full estimation report to the console;
+    # capture it so that extract() stays silent like the other extract methods
+    utils::capture.output(
+      modelOutput <- suppressMessages(apollo::apollo_modelOutput(model, settings))
+    )
+    estimated <- janitor::clean_names(as.data.frame(modelOutput))
+    # pick which SE & p-value columns to use
+    switch(se,
+           rob = {
+             estimated$se <- estimated$rob_s_e
+             estimated$pv <- estimated$p_1_sided_2
+           },
+           bs = {
+             estimated$se <- estimated$bootstrap_s_e
+             estimated$pv <- estimated$p_1_sided_3
+           },
+           normal = {
+             estimated$se <- estimated$s_e
+             estimated$pv <- estimated$p_1_sided
+           }
+    )
+  } else {
+    # user-supplied WTP table
+    estimated <- wtpest
+    colnames(estimated) <- c("estimate", "se", "robt", "pv")
+  }
+
+  # clean up the coefficient names
+  coefnames <-  rownames(estimated)
+
+  # assemble into a texreg object
+  tr <- createTexreg(
+    coef.names   = coefnames,
+    coef         = estimated[["estimate"]],
+    se           = estimated[["se"]],
+    pvalues      = estimated[["pv"]],
+    gof.names    = c("Num. obs.", "Num. indiv.", "Log Likelihood (Null)", "Log Likelihood (Fit)"),
+    gof          = c(
+      model[["nObsTot"]],
+      model[["nIndivs"]],
+      model[["LL0"]][[1]],
+      model[["LLout"]][[1]]
+    ),
+    gof.decimal  = c(FALSE, FALSE, TRUE, TRUE)
+  )
+
+  return(tr)
+}
+
+#' \code{\link{extract}} method for \code{apollo} objects
+#'
+#' \code{\link{extract}} method for \code{apollo} objects created by
+#' \code{apollo::apollo_estimate()}.
+#'
+#' @param model   An object of class \code{apollo}.
+#' @param wtpest   Optional data.frame of willingness-to-pay estimates (and s.e.'s).
+#' @param se       Which standard errors to use: \code{"rob"}, \code{"normal"}, or \code{"bs"}.
+#' @param ...      Currently ignored.
+#'
+#' @method extract apollo
+#' @aliases extract.apollo
+#' @author Julian Sagebiel <julian.sagebiel@idiv.de>
+#' @export
+setMethod(
+  f          = "extract",
+  signature  = className("apollo", "apollo"),
+  definition = extract.apollo_estimation
+)
+

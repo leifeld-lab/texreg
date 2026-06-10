@@ -1231,3 +1231,131 @@ test_that("extract logitr objects from the logitr package", {
   expect_length(tr@gof.decimal, 4)
   expect_equivalent(dim(matrixreg(mnl_pref)), c(15, 2))
 })
+
+
+
+
+
+
+
+test_that("extract.apollo returns a proper texreg object for a tiny MNL model", {
+  testthat::skip_on_cran()
+  testthat::skip_if_not_installed("apollo", minimum_version = "0.3.0")
+
+  require(apollo)
+
+  # load and subset example data for speed
+  data("apollo_swissRouteChoiceData", package = "apollo")
+  database <- apollo_swissRouteChoiceData[1:200, ]
+
+  # initialise Apollo and control settings
+  apollo::apollo_initialise()
+  apollo_control <- list(
+    modelName  = "test_mnl",
+    modelDescr = "Tiny MNL for testing",
+    indivID    = "ID",
+    nCores     = 1
+  )
+  apollo_beta  <- c(ti = 0, cost = 0)
+  apollo_fixed <- c()
+
+  # validate inputs (uses database & apollo_control from global env)
+  apollo_inputs <- apollo_validateInputs(database = database,
+                                         apollo_control = apollo_control,
+                                         apollo_beta = apollo_beta,
+                                         apollo_fixed = apollo_fixed)
+
+  # define extremely simple MNL probabilities function
+  apollo_probabilities <- function(apollo_beta, apollo_inputs, functionality = "estimate") {
+
+
+
+
+
+       apollo_attach(apollo_beta, apollo_inputs)
+    on.exit(apollo_detach(apollo_beta, apollo_inputs))
+
+
+
+    ### Create list of probabilities P
+    P = list()
+
+    V <- list(
+      alt1 =  ti * tt1 + cost * tc1,
+      alt2 =  ti * tt2 + cost * tc2
+    )
+    mnl_settings <- list(
+      alternatives = c(alt1 = 1, alt2 = 2),
+      avail        = 1,
+      choiceVar    = choice,
+      V            = V
+    )
+    ### Compute probabilities using MNL model
+    P[["model"]] = apollo_mnl(mnl_settings, functionality)
+
+    ### Take product across observation for same individual
+    P = apollo_panelProd(P, apollo_inputs, functionality)
+
+    ### Prepare and return outputs of function
+    P = apollo_prepareProb(P, apollo_inputs, functionality)
+    return(P)
+
+  }
+
+  # estimate with very few iterations
+  model <- apollo_estimate(
+    apollo_beta,
+    apollo_fixed,
+    apollo_probabilities,
+    apollo_inputs,
+    estimate_settings = list(
+      estimationRoutine = "bfgs",
+      maxIterations    = 200,
+      silent           = TRUE
+    )
+  )
+
+unlink("test_mnl_iterations.csv")
+
+  # extract texreg object
+  tr <- extract(model)
+
+  # basic structure
+  expect_s4_class(tr, "texreg")
+  expect_equal(length(tr@coef), length(model$estimate))
+
+  # GOF names & values should match what our extract.apollo implementation uses
+  expect_equal(
+    tr@gof.names,
+    c("Num. obs.", "Num. indiv.", "Log Likelihood (Null)", "Log Likelihood (Fit)")
+  )
+  expect_equal(
+    tr@gof,
+    c(model$nObsTot, model$nIndivs, unname(model$LL0), unname(model$LLout))
+  )
+
+
+  wtpest <- data.frame(
+    estimate = c(0.5, 0.3),
+    se       = c(0.05, 0.03),
+    robt     = c(NA, NA),
+    pv       = c(0.10, 0.20)
+  )
+
+  # extract with wtpest
+
+  tr2 <- extract(model, wtpest = wtpest)
+
+  # coefficients, SEs and p-values come from our wtpest
+  expect_equal(tr2@coef, wtpest$estimate)
+  expect_equal(tr2@se,   wtpest$se)
+  expect_equal(tr2@pvalues, wtpest$pv)
+
+
+  expect_error(
+    extract(model = model, se = "invalid"),
+    "Invalid value for 'se'. Please use one of 'rob', 'normal', or 'bs'.")
+
+
+})
+
