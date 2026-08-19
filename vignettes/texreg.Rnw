@@ -59,7 +59,7 @@
 \begin{document}
 \SweaveOpts{concordance=TRUE}
 
-This \proglang{R} package vignette is based on an article in the \emph{Journal of Statistical Software} \citep{leifeld2013texreg:}. The contents of the article have not been modified, apart from the author affiliation. However, the package has been updated with more arguments, model extensions, and functions. The help pages contain details on any differences to the version documented here.
+This \proglang{R} package vignette is based on an article in the \emph{Journal of Statistical Software} \citep{leifeld2013texreg:}. The contents of the article have not been modified, apart from the author affiliation and references. However, the package has been updated with more arguments, model extensions, and functions. The help pages contain details on any differences to the version documented here.
 
 \section[Typesetting R model output in LaTeX and HTML]{Typesetting \proglang{R} model output in {\LaTeX} and HTML}
 
@@ -141,7 +141,7 @@ function which would directly output {\LaTeX} or
 HTML tables and for which custom methods for any model type
 could be written as extensions.  While several attempts already exist
 (see Section~\ref{comparison}), all of them have limitations.  This
-article introduces the \pkg{texreg} package \citep{Leifeld:2013}, which
+article introduces the \pkg{texreg} package \citep{Leifeld:2014}, which
 closes this gap and provides a unified framework for typesetting
 {\LaTeX} and HTML tables for various statistical
 models in \proglang{R}. Package \pkg{texreg} is available from
@@ -1182,7 +1182,7 @@ groupCtl    &                                 &                                 
 
 Most model types implemented in \pkg{texreg} report standard errors
 and $p$~values.  However, some model types report confidence intervals
-by default.  The \pkg{btergm} package \citep{leifeld2013btergm:} and
+by default.  The \pkg{btergm} package \citep{leifeld2018temporal} and
 the \pkg{lme4} package \citep{bates2013lme4:} are two examples.  If
 confidence intervals are preferred to standard errors but they are not
 available by default, the \code{ci.force} argument allows conversion
