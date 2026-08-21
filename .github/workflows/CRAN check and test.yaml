@@ -54,7 +54,7 @@ jobs:
       - name: Query dependencies
         run: |
           install.packages(c("devtools", "covr"))
-          saveRDS(remotes::dev_package_deps(dependencies = TRUE), ".github/depends.Rds", version = 2)
+          saveRDS(devtools::dev_package_deps(dependencies = TRUE), ".github/depends.Rds", version = 2)
           writeLines(sprintf("R-%i.%i", getRversion()$major, getRversion()$minor), ".github/R-version")
         shell: Rscript {0}
 
@@ -71,11 +71,11 @@ jobs:
           while read -r cmd
           do
             eval sudo $cmd
-          done < <(Rscript -e 'writeLines(remotes::system_requirements("ubuntu", "20.04"))')
+          done < <(Rscript -e 'writeLines(devtools::system_requirements("ubuntu", "20.04"))')
 
       - name: Install dependencies
         run: |
-          remotes::install_cran("rcmdcheck")
+          devtools::install_cran("rcmdcheck")
           devtools::install_deps(dependencies = c("Depends", "Imports", "LinkingTo", "Suggests", "Enhances"))
         shell: Rscript {0}
 
