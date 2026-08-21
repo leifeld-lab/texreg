@@ -600,7 +600,7 @@ extract.broom <- function(model, ...) {
                       silent = TRUE)
   gof <- try({
     # extract
-    out <- broom::glance(model)[1, ]
+    out <- broom::glance(model)[1, , drop=FALSE]
     gof.decimal <- sapply(out, function(k) class(k)[1]) # type inference
     gof.decimal <- ifelse(gof.decimal %in% c("integer", "logical"), FALSE, TRUE)
     out <- data.frame("gof.names" = colnames(out),
