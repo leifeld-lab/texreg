@@ -54,7 +54,7 @@ jobs:
       - name: Query dependencies
         run: |
           install.packages("pak")
-          saveRDS(pak::dev_package_deps(dependencies = TRUE), ".github/depends.Rds", version = 2)
+          saveRDS(pak::local_dev_deps(dependencies = TRUE), ".github/depends.Rds", version = 2)
           writeLines(sprintf("R-%i.%i", getRversion()$major, getRversion()$minor), ".github/R-version")
         shell: Rscript {0}
 
