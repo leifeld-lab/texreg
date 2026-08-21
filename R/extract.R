@@ -31,8 +31,8 @@
 #' Users can contribute their own extensions for additional statistical models.
 #' Examples are contained in the article in the Journal of Statistical Software
 #' referenced below. Suggestions can be submitted as pull requests at
-#' \url{https://github.com/leifeld/texreg/pulls} or through the issue tracker at
-#' \url{https://github.com/leifeld/texreg/issues}.
+#' \url{https://github.com/leifeld-lab/texreg/pulls} or through the issue tracker at
+#' \url{https://github.com/leifeld-lab/texreg/issues}.
 #'
 #' @param model A statistical model object.
 #' @param ... Custom parameters, which are handed over to subroutines. The
@@ -142,10 +142,10 @@ setMethod("extract", signature = className("Arima", "stats"),
           definition = extract.Arima)
 
 
-# -- extract.forecast_ARIMA (forecast) -----------------------------------------
+# -- extract.fc_model (forecast) -----------------------------------------
 
 #' @noRd
-extract.forecast_ARIMA <- function (model,
+extract.fc_model <- function (model,
                                     include.pvalues = TRUE,
                                     include.aic = TRUE,
                                     include.aicc = TRUE,
@@ -208,6 +208,53 @@ extract.forecast_ARIMA <- function (model,
     gof.decimal = gof.decimal
   )
   return(tr)
+}
+
+#' \code{\link{extract}} method for \code{fc_model} objects
+#'
+#' \code{\link{extract}} method for \code{fc_model} objects created by the
+#' \code{\link[forecast]{Arima}} function in the \pkg{forecast} package.
+#'
+#' @param model A statistical model object.
+#' @param include.pvalues Report p-values?
+#' @param include.aic Report Akaike's Information Criterion (AIC) in the GOF
+#'   block?
+#' @param include.aicc Report AICC in the GOF block?
+#' @param include.bic Report the Bayesian Information Criterion (BIC) in the GOF
+#'   block?
+#' @param include.loglik Report the log likelihood in the GOF block?
+#' @param include.nobs Report the number of observations in the GOF block?
+#' @param ... Custom parameters, which are handed over to subroutines. Currently
+#'   not in use.
+#'
+#' @method extract fc_model
+#' @aliases extract.fc_model
+#' @importFrom stats pnorm
+#' @export
+setMethod("extract",
+          signature = className("fc_model", "forecast"),
+          definition = extract.fc_model)
+
+
+# -- extract.forecast_ARIMA (forecast) -----------------------------------------
+
+#' @noRd
+extract.forecast_ARIMA <- function (model,
+                                    include.pvalues = TRUE,
+                                    include.aic = TRUE,
+                                    include.aicc = TRUE,
+                                    include.bic = TRUE,
+                                    include.loglik = TRUE,
+                                    include.nobs = TRUE,
+                                    ...) {
+  return(extract.fc_model(model = model,
+                          include.pvalues = include.pvalues,
+                          include.aic = include.aic,
+                          include.aicc = include.aicc,
+                          include.bic = include.bic,
+                          include.loglik = include.loglik,
+                          include.nobs = include.nobs,
+                          ...))
 }
 
 #' \code{\link{extract}} method for \code{forecast_ARIMA} objects
@@ -5910,8 +5957,8 @@ extract.oglmx <- function(model,
 
 #' \code{\link{extract}} method for \code{oglmx} objects
 #'
-#' \code{\link{extract}} method for \code{oglmx} objects created by the
-#' \code{\link[oglmx]{oglmx}} function in the \pkg{oglmx} package.
+#' \code{\link{extract}} method for \code{oglmx} objects created by the oglmx
+#' function in the oglmx package.
 #'
 #' @param model A statistical model object.
 #' @param include.aic Report Akaike's Information Criterion (AIC) in the GOF

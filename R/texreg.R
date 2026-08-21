@@ -596,6 +596,8 @@ huxtablereg <- function(l,
   return(hx)
 }
 
+requireNamespace <- NULL # for testthat mocked bindings
+
 #' Flexibly choose the right table output format for use with \pkg{knitr}
 #'
 #' Flexibly choose the right table output format for use with \pkg{knitr}.
@@ -3129,15 +3131,6 @@ texreg <- function(l,
     } else {
       warning(msg)
     }
-  }
-
-  # check siunitx vs. threeparttable
-  if (isTRUE(siunitx) && isTRUE(threeparttable)) {
-    siunitx <- FALSE
-    msg <- paste("The siunitx package and the threeparttable package cannot be",
-                 "used together. Switching off 'siunitx'. Consider using
-                 'dcolumn = TRUE' instead for decimal point alignment.")
-    warning(msg)
   }
 
   # check longtable vs. sideways

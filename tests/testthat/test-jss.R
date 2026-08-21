@@ -76,6 +76,8 @@ test_that("texreg returns output as in the JSS 2013 article", {
   # saveRDS(table, "../files/jss_texreg_gls.RDS")
 
   # How to use "robust" standard errors with texreg
+  skip_if_not_installed("sandwich")
+  skip_if_not_installed("lmtest")
   expect_equal({
       library("sandwich")
       library("lmtest")

@@ -10,7 +10,7 @@ m2 <- lm(mpg ~ gear + cyl, mtcars)
 
 test_that("huxtablereg gives useful error message if huxtable not installed", {
   skip_if_not_installed("huxtable", minimum_version = "5.0.0")
-  with_mock(requireNamespace = function (...) return(FALSE), {
+  with_mocked_bindings(requireNamespace = function (...) return(FALSE), {
     expect_error(huxtablereg(list(m1, m2)), regex = "huxtable")
   })
 })

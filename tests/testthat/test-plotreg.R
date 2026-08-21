@@ -18,10 +18,10 @@ test_that("plotreg works", {
   p3 <- plotreg(list(m1, m2), custom.title = "My plot")
   p4 <- plotreg(list(m1, m2), custom.note = "My note")
 
-  expect_true(ggplot2::is.ggplot(p1))
-  expect_true(ggplot2::is.ggplot(p2))
-  expect_true(ggplot2::is.ggplot(p3))
-  expect_true(ggplot2::is.ggplot(p4))
+  expect_true(ggplot2::is_ggplot(p1))
+  expect_true(ggplot2::is_ggplot(p2))
+  expect_true(ggplot2::is_ggplot(p3))
+  expect_true(ggplot2::is_ggplot(p4))
 
   expect_s3_class(p1$data, "data.frame")
   expect_s3_class(p1, "gg")
@@ -37,6 +37,7 @@ test_that("plotreg works", {
 test_that("plotreg works with confidence intervals using the biglm package", {
   skip_if_not_installed("ggplot2", minimum_version = "3.3.1")
   skip_if_not_installed("biglm")
+  skip_if_not_installed("broom")
   require("biglm")
   skip_if_not_installed("DBI")
   data("trees")
@@ -45,7 +46,7 @@ test_that("plotreg works with confidence intervals using the biglm package", {
   gg <- log(Volume) ~ log(Girth) + log(Height) + offset(2 * log(Girth) + log(Height))
   b <- biglm::bigglm(gg, data = trees, chunksize = 10, sandwich = TRUE)
   p6 <- plotreg(list(a, b))
-  expect_true(ggplot2::is.ggplot(p6))
+  expect_true(ggplot2::is_ggplot(p6))
   expect_equal(dim(p6$data), dim(readRDS("../files/PlotDataFrameCI.RDS")))
   # saveRDS(p6$data, "../files/PlotDataFrameCI.RDS")
   expect_identical(p6$labels$y, "Bars denote SEs (95%). Circle points denote significance.")
@@ -63,7 +64,7 @@ test_that("plotreg -odds ratio", {
   m1 <- lm(weight ~ group)
   p7 <- plotreg(m1, override.coef = exp(m1$coefficients), ci.force = TRUE, ci.test = 1)
 
-  expect_true(ggplot2::is.ggplot(p7))
+  expect_true(ggplot2::is_ggplot(p7))
   expect_s3_class(p7$data, "data.frame")
   expect_s3_class(p7, "gg")
   expect_equal(dim(p7$data), dim(readRDS("../files/PlotDataFrameOR.RDS"))) # test if data frame is correctly constructed

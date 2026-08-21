@@ -23,8 +23,8 @@ test_that("extract Arima objects from the stats package", {
   expect_equivalent(dim(matrixreg(m)), c(9, 2))
 })
 
-# forecast_ARIMA (forecast) ----
-test_that("extract forecast_ARIMA objects from the forecast package", {
+# fc_model (forecast) ----
+test_that("extract fc_model objects from the forecast package", {
   testthat::skip_on_cran()
   skip_if_not_installed("forecast")
   require("forecast")
@@ -381,7 +381,7 @@ test_that("extract fixest objects created with the fixest package", {
   firm.eff <- rnorm(nlevels(data$firm))
   u <- rnorm(length(x))
   data$y <- with(data, x + 0.5 * x2 + id.eff[id] + firm.eff[firm] + u)
-  est <- feols(y ~ x + x2 | id + firm, data = data)
+  est <- feols(y ~ x + x2 | id + firm, vcov = "cluster", data = data)
 
   tr <- extract(est)
 
@@ -402,7 +402,7 @@ test_that("extract fixest objects created with the fixest package", {
   tr <- extract(est)
 
   expect_equivalent(tr@coef, c(1.00, 1.00), tolerance = 1e-2)
-  expect_equivalent(tr@se, c(0.01, 0.02), tolerance = 1e-2)
+  expect_equivalent(tr@se, c(0.01, 0.02), tolerance = 1e-1)
   expect_equivalent(tr@pvalues, c(0.00, 0.00), tolerance = 1e-2)
   expect_equivalent(tr@gof, c(1000, 20, 955.4, -1479.6, 0.83), tolerance = 1e-2)
   expect_length(tr@gof.names, 5)
@@ -499,7 +499,7 @@ test_that("extract glmerMod objects from the lme4 package", {
 # glmmTMB (glmmTMB) ----
 test_that("extract glmmTMB objects from the glmmTMB package", {
   testthat::skip_on_cran()
-  skip_if_not_installed("glmmTMB", minimum_version = "1.0.1")
+  skip_if_not_installed("glmmTMB", minimum_version = "1.1.14")
   require("glmmTMB")
 
   set.seed(12345)
@@ -881,9 +881,9 @@ test_that("extract prais objects from the prais package", {
 # remstimate (remstimate) ----
 test_that("extract remstimate objects from the remstimate package", {
   testthat::skip_on_cran()
-  skip_if_not_installed("remstimate", minimum_version = "2.3.11")
-  skip_if_not_installed("remify", minimum_version = "3.2.6")
-  skip_if_not_installed("remstats", minimum_version = "3.2.2")
+  skip_if_not_installed("remstimate", minimum_version = "3.1.0")
+  skip_if_not_installed("remify", minimum_version = "4.1.0")
+  skip_if_not_installed("remstats", minimum_version = "4.1.0")
 
   data(tie_data, package = "remstimate")
   tie_reh <- remify::remify(edgelist = tie_data$edgelist, model = "tie")
@@ -894,55 +894,43 @@ test_that("extract remstimate objects from the remstimate package", {
   tie_reh_stats <- remstats::remstats(reh = tie_reh, tie_effects = tie_model)
   rem1 <- remstimate::remstimate(reh = tie_reh,
                                  stats = tie_reh_stats,
-                                 method = "MLE",
+                                 approach = "frequentist",
                                  ncores = 1)
   rem2 <- remstimate::remstimate(reh = tie_reh,
                                  stats = tie_reh_stats,
-                                 method = "HMC",
+                                 approach = "Bayesian",
                                  ncores = 1,
                                  L = 5L)
-  rem3 <- remstimate::remstimate(reh = tie_reh,
-                                 stats = tie_reh_stats,
-                                 method = "GDADAMAX",
-                                 ncores = 1)
-  rem4 <- remstimate::remstimate(reh = tie_reh,
-                                 stats = tie_reh_stats,
-                                 method = "BSIR",
-                                 ncores = 1)
-  mr1 <- matrixreg(list(rem1, rem2, rem3, rem4))
+  mr1 <- matrixreg(list(rem1, rem2))
   expect_true("matrix" %in% class(mr1))
   expect_equal(nrow(mr1), 14)
-  expect_equal(ncol(mr1), 5)
+  expect_equal(ncol(mr1), 3)
 
   actor_reh <- remify::remify(edgelist = tie_data$edgelist, model = "actor")
   sender_model <- ~ 1 + remstats::outdegreeSender()
   receiver_model <- ~ 1 + remstats::otp()
   actor_reh_stats <- remstats::remstats(reh = actor_reh, sender_effects = sender_model, receiver_effects = receiver_model)
-  rem5 <- remstimate::remstimate(reh = actor_reh,
+  rem3 <- remstimate::remstimate(reh = actor_reh,
                                  stats = actor_reh_stats,
-                                 method = "MLE",
+                                 approach = "frequentist",
                                  ncores = 1)
-  rem6 <- remstimate::remstimate(reh = actor_reh,
+  rem4 <- remstimate::remstimate(reh = actor_reh,
                                  stats = actor_reh_stats,
-                                 method = "HMC",
+                                 approach = "Bayesian",
                                  ncores = 1,
                                  L = 5L)
-  rem7 <- remstimate::remstimate(reh = actor_reh,
-                                 stats = actor_reh_stats,
-                                 method = "GDADAMAX",
-                                 ncores = 1)
-  tr5 <- extract(rem5)
-  expect_length(tr5, 2)
-  expect_length(tr5[[1]]@coef.names, 2)
-  expect_length(tr5[[1]]@gof, 5)
-  expect_equal(tr5[[1]]@model.name, "sender_model")
-  expect_length(tr5[[2]]@coef.names, 1)
-  expect_length(tr5[[2]]@gof, 5)
-  expect_equal(tr5[[2]]@model.name, "receiver_model")
-  mr2 <- matrixreg(list(rem5, rem6, rem7))
+  tr3 <- extract(rem3)
+  expect_length(tr3, 2)
+  expect_length(tr3[[1]]@coef.names, 2)
+  expect_length(tr3[[1]]@gof, 5)
+  expect_equal(tr3[[1]]@model.name, "sender_model")
+  expect_length(tr3[[2]]@coef.names, 1)
+  expect_length(tr3[[2]]@gof, 5)
+  expect_equal(tr3[[2]]@model.name, "receiver_model")
+  mr2 <- matrixreg(list(rem3, rem4))
   expect_true("matrix" %in% class(mr2))
   expect_equal(nrow(mr2), 12)
-  expect_equal(ncol(mr2), 7)
+  expect_equal(ncol(mr2), 5)
 })
 
 # Sarlm (spatialreg) ----

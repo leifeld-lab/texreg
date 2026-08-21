@@ -33,6 +33,6 @@ block?}
 case to the \code{summary} method for the object.}
 }
 \description{
-\code{\link{extract}} method for \code{oglmx} objects created by the
-\code{\link[oglmx]{oglmx}} function in the \pkg{oglmx} package.
+\code{\link{extract}} method for \code{oglmx} objects created by the oglmx
+function in the oglmx package.
 }
