@@ -67,7 +67,7 @@ jobs:
 
       - name: Install system dependencies
         if: runner.os == 'Linux'
-        run: pak::pkg_sysreqs_install()
+        run: pak::local_install_sysreqs()
         shell: Rscript {0}
 
       - name: Install dependencies
