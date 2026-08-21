@@ -23,8 +23,8 @@ test_that("extract Arima objects from the stats package", {
   expect_equivalent(dim(matrixreg(m)), c(9, 2))
 })
 
-# forecast_ARIMA (forecast) ----
-test_that("extract forecast_ARIMA objects from the forecast package", {
+# fc_model (forecast) ----
+test_that("extract fc_model objects from the forecast package", {
   testthat::skip_on_cran()
   skip_if_not_installed("forecast")
   require("forecast")

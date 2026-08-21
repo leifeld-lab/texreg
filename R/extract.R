@@ -142,10 +142,10 @@ setMethod("extract", signature = className("Arima", "stats"),
           definition = extract.Arima)
 
 
-# -- extract.forecast_ARIMA (forecast) -----------------------------------------
+# -- extract.fc_model (forecast) -----------------------------------------
 
 #' @noRd
-extract.forecast_ARIMA <- function (model,
+extract.fc_model <- function (model,
                                     include.pvalues = TRUE,
                                     include.aic = TRUE,
                                     include.aicc = TRUE,
@@ -208,6 +208,53 @@ extract.forecast_ARIMA <- function (model,
     gof.decimal = gof.decimal
   )
   return(tr)
+}
+
+#' \code{\link{extract}} method for \code{fc_model} objects
+#'
+#' \code{\link{extract}} method for \code{fc_model} objects created by the
+#' \code{\link[forecast]{Arima}} function in the \pkg{forecast} package.
+#'
+#' @param model A statistical model object.
+#' @param include.pvalues Report p-values?
+#' @param include.aic Report Akaike's Information Criterion (AIC) in the GOF
+#'   block?
+#' @param include.aicc Report AICC in the GOF block?
+#' @param include.bic Report the Bayesian Information Criterion (BIC) in the GOF
+#'   block?
+#' @param include.loglik Report the log likelihood in the GOF block?
+#' @param include.nobs Report the number of observations in the GOF block?
+#' @param ... Custom parameters, which are handed over to subroutines. Currently
+#'   not in use.
+#'
+#' @method extract fc_model
+#' @aliases extract.fc_model
+#' @importFrom stats pnorm
+#' @export
+setMethod("extract",
+          signature = className("fc_model", "forecast"),
+          definition = extract.fc_model)
+
+
+# -- extract.forecast_ARIMA (forecast) -----------------------------------------
+
+#' @noRd
+extract.forecast_ARIMA <- function (model,
+                                    include.pvalues = TRUE,
+                                    include.aic = TRUE,
+                                    include.aicc = TRUE,
+                                    include.bic = TRUE,
+                                    include.loglik = TRUE,
+                                    include.nobs = TRUE,
+                                    ...) {
+  return(extract.fc_model(model = model,
+                          include.pvalues = include.pvalues,
+                          include.aic = include.aic,
+                          include.aicc = include.aicc,
+                          include.bic = include.bic,
+                          include.loglik = include.loglik,
+                          include.nobs = include.nobs,
+                          ...))
 }
 
 #' \code{\link{extract}} method for \code{forecast_ARIMA} objects
