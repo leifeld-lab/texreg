@@ -1,19 +1,19 @@
 context("extract methods")
 suppressPackageStartupMessages(library("texreg"))
 
+# apollo_estimation (apollo) ----
 test_that("extract apollo_estimation objects from the apollo package", {
   testthat::skip_on_cran()
   testthat::skip_if_not_installed("apollo", minimum_version = "0.3.0")
 
-  require("apollo")
+  suppressPackageStartupMessages(require("apollo"))
   set.seed(12345)
 
   # load and subset example data for speed
   data("apollo_swissRouteChoiceData", package = "apollo")
   database <- apollo_swissRouteChoiceData[1:200, ]
 
-  # initialise Apollo and control settings
-  apollo::apollo_initialise()
+  # initialise apollo and control settings
   apollo_control <- list(
     modelName = "test_mnl",
     modelDescr = "Tiny MNL for testing",
@@ -24,10 +24,17 @@ test_that("extract apollo_estimation objects from the apollo package", {
   apollo_fixed <- c()
 
   # validate inputs (uses database & apollo_control from global env)
-  apollo_inputs <- apollo_validateInputs(database = database,
-                                         apollo_control = apollo_control,
-                                         apollo_beta = apollo_beta,
-                                         apollo_fixed = apollo_fixed)
+  utils::capture.output(
+    suppressMessages(
+      apollo_inputs <- apollo_validateInputs(
+        database = database,
+        apollo_control = apollo_control,
+        apollo_beta = apollo_beta,
+        apollo_fixed = apollo_fixed,
+        silent = TRUE
+      )
+    )
+  )
 
   # define extremely simple MNL probabilities function
   apollo_probabilities <- function(apollo_beta,
