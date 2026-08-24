@@ -31,8 +31,8 @@
 #' Users can contribute their own extensions for additional statistical models.
 #' Examples are contained in the article in the Journal of Statistical Software
 #' referenced below. Suggestions can be submitted as pull requests at
-#' \url{https://github.com/leifeld/texreg/pulls} or through the issue tracker at
-#' \url{https://github.com/leifeld/texreg/issues}.
+#' \url{https://github.com/leifeld-lab/texreg/pulls} or through the issue tracker at
+#' \url{https://github.com/leifeld-lab/texreg/issues}.
 #'
 #' @param model A statistical model object.
 #' @param ... Custom parameters, which are handed over to subroutines. The
@@ -51,6 +51,134 @@
 #' @export
 setGeneric("extract", function(model, ...) standardGeneric("extract"),
            package = "texreg")
+
+
+# -- extract.apollo_estimation (apollo) ----------------------------------------
+
+#' @noRd
+extract.apollo_estimation <- function(model,
+                                      wtpest = NULL,
+                                      se = "rob",
+                                      include.loglik = TRUE,
+                                      include.nobs = TRUE,
+                                      ...) {
+  # validate 'se' argument
+  if (!se %in% c("rob", "normal", "bs")) {
+    stop("Invalid value for 'se'. Please use one of 'rob', 'normal', or 'bs'.")
+  }
+  # bootstrap SEs must exist in the model object
+  if (se == "bs" && !"bootse" %in% names(model)) {
+    stop("No bootstrapped SE found. The 'model' must contain 'bootse' for se = 'bs'.")
+  }
+
+  # pull out the standard apollo output table
+  settings <- list(printPVal = TRUE)
+  if (is.null(wtpest)) {
+    if (!requireNamespace("apollo", quietly = TRUE)) {
+      stop("The 'apollo' package is required to extract apollo models.\n",
+           "To install it, enter 'install.packages(\"apollo\")'.", call. = FALSE)
+    }
+    # capture output quietly to prevent any stray console output
+    invisible(
+      utils::capture.output(
+        modelOutput <- suppressMessages(apollo::apollo_modelOutput(model, settings))
+      )
+    )
+
+    estimated <- as.data.frame(modelOutput)
+
+    # make col names lower case and replace parentheses by '.'
+    colnames(estimated) <- tolower(make.names(colnames(estimated), unique = TRUE))
+
+    # match columns by prefix/pattern
+    col_se_rob <- grep("rob.*s.*e", colnames(estimated), value = TRUE)[1]
+    col_se_bs <- grep("boot.*s.*e", colnames(estimated), value = TRUE)[1]
+    col_se_std <- grep("^s\\.e|^se", colnames(estimated), value = TRUE)[1]
+
+    # p-value columns appear in order: standard (1st), robust (2nd), bootstrap (3rd)
+    pval_cols <- grep("^p.*1.*sided|^p.*val", colnames(estimated), value = TRUE)
+
+    switch(se,
+           rob = {
+             estimated$se <- estimated[[col_se_rob]]
+             estimated$pv <- if (length(pval_cols) >= 2) estimated[[pval_cols[2]]] else estimated[[pval_cols[1]]]
+           },
+           bs = {
+             estimated$se <- estimated[[col_se_bs]]
+             estimated$pv <- if (length(pval_cols) >= 3) estimated[[pval_cols[3]]] else estimated[[pval_cols[1]]]
+           },
+           normal = {
+             estimated$se <- estimated[[col_se_std]]
+             estimated$pv <- estimated[[pval_cols[1]]]
+           }
+    )
+
+    # extract estimate column
+    est_col <- grep("^est", colnames(estimated), value = TRUE)[1]
+    estimated$estimate <- estimated[[est_col]]
+  } else {
+    # user-supplied WTP table
+    estimated <- as.data.frame(wtpest)
+    colnames(estimated)[1:4] <- c("estimate", "se", "robt", "pv")
+  }
+
+  # clean up the coefficient names
+  coefnames <-  rownames(estimated)
+
+  # GOF block
+  gof <- numeric()
+  gof.names <- character()
+  gof.decimal <- logical()
+  if (include.nobs) {
+    gof <- c(gof, model[["nObsTot"]], model[["nIndivs"]])
+    gof.names <- c(gof.names, "Num. obs.", "Num. indiv.")
+    gof.decimal <- c(gof.decimal, FALSE, FALSE)
+  }
+  if (include.loglik) {
+    gof <- c(gof, model[["LL0"]][[1]], model[["LLout"]][[1]])
+    gof.names <- c(gof.names, "Log Likelihood (Null)", "Log Likelihood")
+    gof.decimal <- c(gof.decimal, TRUE, TRUE)
+  }
+
+  # assemble into a texreg object
+  tr <- createTexreg(
+    coef.names = coefnames,
+    coef = estimated[["estimate"]],
+    se = estimated[["se"]],
+    pvalues = estimated[["pv"]],
+    gof.names = gof.names,
+    gof = gof,
+    gof.decimal  = gof.decimal
+  )
+
+  return(tr)
+}
+
+#' \code{\link{extract}} method for \code{apollo} objects
+#'
+#' \code{\link{extract}} method for \code{apollo} objects created by
+#' \code{apollo::apollo_estimate()}.
+#'
+#' @param model An object of class \code{apollo}.
+#' @param wtpest Optional \code{data.frame} of willingness-to-pay estimates
+#'   (and standard errors).
+#' @param se Which standard errors to use: \code{"rob"}, \code{"normal"}, or
+#'   \code{"bs"}.
+#' @param include.loglik Report the log likelihood (including for the null
+#'   model) in the GOF block?
+#' @param include.nobs Report the number of observations and individuals in the
+#'   GOF block?
+#' @param ... Currently ignored.
+#'
+#' @method extract apollo
+#' @aliases extract.apollo
+#' @author Julian Sagebiel \email{julian.sagebiel@idiv.de}, Philip Leifeld
+#' @export
+setMethod(
+  f = "extract",
+  signature  = className("apollo", "apollo"),
+  definition = extract.apollo_estimation
+)
 
 
 # -- extract.Arima (stats) -----------------------------------------------------
@@ -142,10 +270,10 @@ setMethod("extract", signature = className("Arima", "stats"),
           definition = extract.Arima)
 
 
-# -- extract.forecast_ARIMA (forecast) -----------------------------------------
+# -- extract.fc_model (forecast) -----------------------------------------
 
 #' @noRd
-extract.forecast_ARIMA <- function (model,
+extract.fc_model <- function (model,
                                     include.pvalues = TRUE,
                                     include.aic = TRUE,
                                     include.aicc = TRUE,
@@ -208,6 +336,53 @@ extract.forecast_ARIMA <- function (model,
     gof.decimal = gof.decimal
   )
   return(tr)
+}
+
+#' \code{\link{extract}} method for \code{fc_model} objects
+#'
+#' \code{\link{extract}} method for \code{fc_model} objects created by the
+#' \code{\link[forecast]{Arima}} function in the \pkg{forecast} package.
+#'
+#' @param model A statistical model object.
+#' @param include.pvalues Report p-values?
+#' @param include.aic Report Akaike's Information Criterion (AIC) in the GOF
+#'   block?
+#' @param include.aicc Report AICC in the GOF block?
+#' @param include.bic Report the Bayesian Information Criterion (BIC) in the GOF
+#'   block?
+#' @param include.loglik Report the log likelihood in the GOF block?
+#' @param include.nobs Report the number of observations in the GOF block?
+#' @param ... Custom parameters, which are handed over to subroutines. Currently
+#'   not in use.
+#'
+#' @method extract fc_model
+#' @aliases extract.fc_model
+#' @importFrom stats pnorm
+#' @export
+setMethod("extract",
+          signature = className("fc_model", "forecast"),
+          definition = extract.fc_model)
+
+
+# -- extract.forecast_ARIMA (forecast) -----------------------------------------
+
+#' @noRd
+extract.forecast_ARIMA <- function (model,
+                                    include.pvalues = TRUE,
+                                    include.aic = TRUE,
+                                    include.aicc = TRUE,
+                                    include.bic = TRUE,
+                                    include.loglik = TRUE,
+                                    include.nobs = TRUE,
+                                    ...) {
+  return(extract.fc_model(model = model,
+                          include.pvalues = include.pvalues,
+                          include.aic = include.aic,
+                          include.aicc = include.aicc,
+                          include.bic = include.bic,
+                          include.loglik = include.loglik,
+                          include.nobs = include.nobs,
+                          ...))
 }
 
 #' \code{\link{extract}} method for \code{forecast_ARIMA} objects
@@ -553,7 +728,7 @@ extract.broom <- function(model, ...) {
                       silent = TRUE)
   gof <- try({
     # extract
-    out <- broom::glance(model)[1, ]
+    out <- broom::glance(model)[1, , drop = FALSE]
     gof.decimal <- sapply(out, function(k) class(k)[1]) # type inference
     gof.decimal <- ifelse(gof.decimal %in% c("integer", "logical"), FALSE, TRUE)
     out <- data.frame("gof.names" = colnames(out),

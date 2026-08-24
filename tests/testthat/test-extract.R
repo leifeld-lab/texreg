@@ -1,6 +1,120 @@
 context("extract methods")
 suppressPackageStartupMessages(library("texreg"))
 
+test_that("extract apollo_estimation objects from the apollo package", {
+  testthat::skip_on_cran()
+  testthat::skip_if_not_installed("apollo", minimum_version = "0.3.0")
+
+  require("apollo")
+  set.seed(12345)
+
+  # load and subset example data for speed
+  data("apollo_swissRouteChoiceData", package = "apollo")
+  database <- apollo_swissRouteChoiceData[1:200, ]
+
+  # initialise Apollo and control settings
+  apollo::apollo_initialise()
+  apollo_control <- list(
+    modelName = "test_mnl",
+    modelDescr = "Tiny MNL for testing",
+    indivID = "ID",
+    nCores = 1
+  )
+  apollo_beta  <- c(ti = 0, cost = 0)
+  apollo_fixed <- c()
+
+  # validate inputs (uses database & apollo_control from global env)
+  apollo_inputs <- apollo_validateInputs(database = database,
+                                         apollo_control = apollo_control,
+                                         apollo_beta = apollo_beta,
+                                         apollo_fixed = apollo_fixed)
+
+  # define extremely simple MNL probabilities function
+  apollo_probabilities <- function(apollo_beta,
+                                   apollo_inputs,
+                                   functionality = "estimate") {
+    apollo_attach(apollo_beta, apollo_inputs)
+    on.exit(apollo_detach(apollo_beta, apollo_inputs))
+
+    ### Create list of probabilities P
+    P = list()
+    V <- list(
+      alt1 =  ti * tt1 + cost * tc1,
+      alt2 =  ti * tt2 + cost * tc2
+    )
+    mnl_settings <- list(
+      alternatives = c(alt1 = 1, alt2 = 2),
+      avail        = 1,
+      choiceVar    = choice,
+      V            = V
+    )
+    ### Compute probabilities using MNL model
+    P[["model"]] = apollo_mnl(mnl_settings, functionality)
+
+    ### Take product across observation for same individual
+    P = apollo_panelProd(P, apollo_inputs, functionality)
+
+    ### Prepare and return outputs of function
+    P = apollo_prepareProb(P, apollo_inputs, functionality)
+    return(P)
+  }
+
+  # estimate with very few iterations
+  invisible(
+    utils::capture.output(
+      model <- apollo_estimate(
+        apollo_beta,
+        apollo_fixed,
+        apollo_probabilities,
+        apollo_inputs,
+        estimate_settings = list(
+          estimationRoutine = "bfgs",
+          maxIterations = 200,
+          silent = TRUE
+        )
+      )
+    )
+  )
+
+  unlink("test_mnl_iterations.csv")
+
+  # extract texreg object
+  tr <- extract(model)
+
+  # basic structure
+  expect_s4_class(tr, "texreg")
+  expect_equal(length(tr@coef), length(model$estimate))
+
+  # GOF names & values should match what our extract.apollo implementation uses
+  expect_equal(
+    tr@gof.names,
+    c("Num. obs.", "Num. indiv.", "Log Likelihood (Null)", "Log Likelihood")
+  )
+  expect_equal(
+    tr@gof,
+    c(model$nObsTot, model$nIndivs, unname(model$LL0), unname(model$LLout))
+  )
+
+  wtpest <- data.frame(
+    estimate = c(0.5, 0.3),
+    se       = c(0.05, 0.03),
+    robt     = c(NA, NA),
+    pv       = c(0.10, 0.20)
+  )
+
+  # extract with wtpest
+  tr2 <- extract(model, wtpest = wtpest)
+
+  # coefficients, SEs and p-values come from our wtpest
+  expect_equal(tr2@coef, wtpest$estimate)
+  expect_equal(tr2@se,   wtpest$se)
+  expect_equal(tr2@pvalues, wtpest$pv)
+
+  expect_error(
+    extract(model = model, se = "invalid"),
+    "Invalid value for 'se'. Please use one of 'rob', 'normal', or 'bs'.")
+})
+
 # Arima (stats) ----
 test_that("extract Arima objects from the stats package", {
   testthat::skip_on_cran()
@@ -23,8 +137,8 @@ test_that("extract Arima objects from the stats package", {
   expect_equivalent(dim(matrixreg(m)), c(9, 2))
 })
 
-# forecast_ARIMA (forecast) ----
-test_that("extract forecast_ARIMA objects from the forecast package", {
+# fc_model (forecast) ----
+test_that("extract fc_model objects from the forecast package", {
   testthat::skip_on_cran()
   skip_if_not_installed("forecast")
   require("forecast")
@@ -499,7 +613,7 @@ test_that("extract glmerMod objects from the lme4 package", {
 # glmmTMB (glmmTMB) ----
 test_that("extract glmmTMB objects from the glmmTMB package", {
   testthat::skip_on_cran()
-  skip_if_not_installed("glmmTMB", minimum_version = "1.0.1")
+  skip_if_not_installed("glmmTMB", minimum_version = "1.1.14")
   require("glmmTMB")
 
   set.seed(12345)
@@ -881,9 +995,9 @@ test_that("extract prais objects from the prais package", {
 # remstimate (remstimate) ----
 test_that("extract remstimate objects from the remstimate package", {
   testthat::skip_on_cran()
-  skip_if_not_installed("remstimate", minimum_version = "2.3.11")
-  skip_if_not_installed("remify", minimum_version = "3.2.6")
-  skip_if_not_installed("remstats", minimum_version = "3.2.2")
+  skip_if_not_installed("remstimate", minimum_version = "3.1.0")
+  skip_if_not_installed("remify", minimum_version = "4.1.0")
+  skip_if_not_installed("remstats", minimum_version = "4.1.0")
 
   data(tie_data, package = "remstimate")
   tie_reh <- remify::remify(edgelist = tie_data$edgelist, model = "tie")
@@ -894,55 +1008,43 @@ test_that("extract remstimate objects from the remstimate package", {
   tie_reh_stats <- remstats::remstats(reh = tie_reh, tie_effects = tie_model)
   rem1 <- remstimate::remstimate(reh = tie_reh,
                                  stats = tie_reh_stats,
-                                 method = "MLE",
+                                 approach = "frequentist",
                                  ncores = 1)
   rem2 <- remstimate::remstimate(reh = tie_reh,
                                  stats = tie_reh_stats,
-                                 method = "HMC",
+                                 approach = "Bayesian",
                                  ncores = 1,
                                  L = 5L)
-  rem3 <- remstimate::remstimate(reh = tie_reh,
-                                 stats = tie_reh_stats,
-                                 method = "GDADAMAX",
-                                 ncores = 1)
-  rem4 <- remstimate::remstimate(reh = tie_reh,
-                                 stats = tie_reh_stats,
-                                 method = "BSIR",
-                                 ncores = 1)
-  mr1 <- matrixreg(list(rem1, rem2, rem3, rem4))
+  mr1 <- matrixreg(list(rem1, rem2))
   expect_true("matrix" %in% class(mr1))
   expect_equal(nrow(mr1), 14)
-  expect_equal(ncol(mr1), 5)
+  expect_equal(ncol(mr1), 3)
 
   actor_reh <- remify::remify(edgelist = tie_data$edgelist, model = "actor")
   sender_model <- ~ 1 + remstats::outdegreeSender()
   receiver_model <- ~ 1 + remstats::otp()
   actor_reh_stats <- remstats::remstats(reh = actor_reh, sender_effects = sender_model, receiver_effects = receiver_model)
-  rem5 <- remstimate::remstimate(reh = actor_reh,
+  rem3 <- remstimate::remstimate(reh = actor_reh,
                                  stats = actor_reh_stats,
-                                 method = "MLE",
+                                 approach = "frequentist",
                                  ncores = 1)
-  rem6 <- remstimate::remstimate(reh = actor_reh,
+  rem4 <- remstimate::remstimate(reh = actor_reh,
                                  stats = actor_reh_stats,
-                                 method = "HMC",
+                                 approach = "Bayesian",
                                  ncores = 1,
                                  L = 5L)
-  rem7 <- remstimate::remstimate(reh = actor_reh,
-                                 stats = actor_reh_stats,
-                                 method = "GDADAMAX",
-                                 ncores = 1)
-  tr5 <- extract(rem5)
-  expect_length(tr5, 2)
-  expect_length(tr5[[1]]@coef.names, 2)
-  expect_length(tr5[[1]]@gof, 5)
-  expect_equal(tr5[[1]]@model.name, "sender_model")
-  expect_length(tr5[[2]]@coef.names, 1)
-  expect_length(tr5[[2]]@gof, 5)
-  expect_equal(tr5[[2]]@model.name, "receiver_model")
-  mr2 <- matrixreg(list(rem5, rem6, rem7))
+  tr3 <- extract(rem3)
+  expect_length(tr3, 2)
+  expect_length(tr3[[1]]@coef.names, 2)
+  expect_length(tr3[[1]]@gof, 5)
+  expect_equal(tr3[[1]]@model.name, "sender_model")
+  expect_length(tr3[[2]]@coef.names, 1)
+  expect_length(tr3[[2]]@gof, 5)
+  expect_equal(tr3[[2]]@model.name, "receiver_model")
+  mr2 <- matrixreg(list(rem3, rem4))
   expect_true("matrix" %in% class(mr2))
   expect_equal(nrow(mr2), 12)
-  expect_equal(ncol(mr2), 7)
+  expect_equal(ncol(mr2), 5)
 })
 
 # Sarlm (spatialreg) ----
