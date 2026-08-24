@@ -18,14 +18,27 @@ The last stable release can be installed from CRAN:
 ``` r
 install.packages("texreg")
 ```
-To install the latest development version from GitHub, use the `remotes` package:
+To install the latest development version from GitHub, use `pak`:
 ``` r
-remotes::install_github("leifeld/texreg")
+pak::pak("leifeld-lab/texreg")
+```
+Alternatively, you can use the `remotes` package:
+``` r
+remotes::install_github("leifeld-lab/texreg")
 ```
 
 ## Contribute to the project
 
-Please feel free to report bugs or suggested enhancements using the [issue tracker](http://github.com/leifeld/texreg/issues) and propose solutions for known bugs using a pull request. Please observe and follow the code formatting in the texreg package when doing so, and add (or update) `testthat` unit tests to your pull requests if possible.
+Please feel free to report bugs or suggested enhancements using the [issue tracker](http://github.com/leifeld/texreg/issues) and propose solutions for known bugs using a pull request.
+
+Guidelines for pull requests:
+- Please observe and follow the code formatting in the **texreg** package.
+- Add (or update) **testthat** unit tests to your pull requests if possible.
+- Add (or update) **roxygen2** documentation if necessary (including `@author` fields if you make significant changes to a function).
+- Do not add unnecessary dependencies. Where possible, use base R.
+- Align argument names in `extract` method headers with those in other `extract` methods where possible, to ensure different models can be combined seamlessly in a single table.
+
+----
 
 [![CRAN check and test](https://github.com/leifeld/texreg/actions/workflows/CRAN%20check%20and%20test.yaml/badge.svg)](https://github.com/leifeld/texreg/actions/workflows/CRAN%20check%20and%20test.yaml)
 [![cran version](https://www.r-pkg.org/badges/version/texreg)](https://cran.r-project.org/package=texreg)
