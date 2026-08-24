@@ -440,6 +440,32 @@ Word for inclusion in office documents. \code{\link{htmlreg}} also works with
 \code{doctype}, \code{html.tag}, \code{head.tag}, \code{body.tag}, and
 \code{star.symbol} arguments must be adjusted for the different purposes (see
 the description of the arguments).
+
+Significance stars are wrapped in \code{<sup class="texreg-stars"> ... </sup>},
+which formats them in superscript. The \code{texreg-stars} class can be used
+to tweak their appearance, for example by increasing the font size and
+lowering their vertical alignment via
+\preformatted{
+<style>
+  .texreg-stars {
+    font-size: 1.4em;
+    vertical-align: -0.6em;
+    line-height: 0;
+  }
+</style>
+}
+in the HTML, Markdown, or Quarto document or using a \code{css} chunk in an R
+Markdown or Quarto document:
+\preformatted{
+```{css, echo=FALSE}
+/* asterisks inside htmlreg tables */
+.texreg-stars {
+  font-size: 1.4em;
+  vertical-align: -0.6em;
+  line-height: 0;
+}
+```
+}
 }
 \examples{
 library("nlme")

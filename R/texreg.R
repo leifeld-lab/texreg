@@ -34,6 +34,32 @@ NULL
 #' \code{star.symbol} arguments must be adjusted for the different purposes (see
 #' the description of the arguments).
 #'
+#' Significance stars are wrapped in \code{<sup class="texreg-stars"> ... </sup>},
+#' which formats them in superscript. The \code{texreg-stars} class can be used
+#' to tweak their appearance, for example by increasing the font size and
+#' lowering their vertical alignment via
+#' \preformatted{
+#' <style>
+#'   .texreg-stars {
+#'     font-size: 1.4em;
+#'     vertical-align: -0.6em;
+#'     line-height: 0;
+#'   }
+#' </style>
+#' }
+#' in the HTML, Markdown, or Quarto document or using a \code{css} chunk in an R
+#' Markdown or Quarto document:
+#' \preformatted{
+#' ```{css, echo=FALSE}
+#' /* asterisks inside htmlreg tables */
+#' .texreg-stars {
+#'   font-size: 1.4em;
+#'   vertical-align: -0.6em;
+#'   line-height: 0;
+#' }
+#' ```
+#' }
+#'
 #' @param inline.css Should the CSS stylesheets be embedded directly in the code
 #'   of the table (\code{inline.css = TRUE}), or should the CSS stylesheets be
 #'   enclosed in the <head> tag, that is, separated from the table code
@@ -1480,7 +1506,7 @@ matrixreg <- function(l,
     posinfstring <- "Inf"
     se.prefix <- " ("
     se.suffix <- ")"
-    star.prefix <- paste0("<sup>")
+    star.prefix <- paste0("<sup class=\"texreg-stars\">")
     star.suffix <- "</sup>"
     dcolumn <- TRUE
     bold.prefix <- "<b>"
@@ -4175,7 +4201,7 @@ get_stars_note <- function(stars = c(0.01, 0.05, 0.1),
                        st,
                        "$")
     } else if (output == "html") {
-      p_note <- paste0("<sup>",
+      p_note <- paste0("<sup class=\"texreg-stars\">",
                        symbols,
                        "</sup>p &lt; ",
                        st)
