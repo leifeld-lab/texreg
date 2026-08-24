@@ -8,6 +8,7 @@
 \S4method{extract}{betareg}(
   model,
   include.precision = TRUE,
+  include.nu = TRUE,
   include.pseudors = TRUE,
   include.loglik = TRUE,
   include.nobs = TRUE,
@@ -17,7 +18,9 @@
 \arguments{
 \item{model}{A statistical model object.}
 
-\item{include.precision}{Report precision in the GOF block?}
+\item{include.precision}{Report precision in the coef block?}
+
+\item{include.nu}{Report the exceedence in the coef block?}
 
 \item{include.pseudors}{Report pseudo R^2 in the GOF block?}
 
@@ -31,4 +34,7 @@ case to the \code{summary} method for the object.}
 \description{
 \code{\link{extract}} method for \code{betareg} objects created by the
 \code{\link[betareg]{betareg}} function in the \pkg{betareg} package.
+}
+\author{
+Kevin Navarrete-Parra, Philip Leifeld
 }

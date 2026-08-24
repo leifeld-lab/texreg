@@ -199,6 +199,116 @@ test_that("extract bergm objects from the Bergm package", {
   expect_equivalent(dim(matrixreg(p.flo)), c(5, 2))
 })
 
+# betareg (betareg) ----
+test_that("extract classic betareg objects from the betareg package", {
+  testthat::skip_on_cran()
+  skip_if_not_installed("betareg", minimum_version = "3.2.0")
+  require("betareg")
+  set.seed(12345)
+  n <- 200
+  x <- rnorm(n)
+  y <- plogis(1 + 0.5 * x + rnorm(n, sd = 0.5))
+  m <- betareg(y ~ x, data = data.frame(y = y, x = x))
+
+  tr <- extract(m)
+  expect_length(tr@coef.names, 3)
+  expect_length(tr@coef, 3)
+  expect_length(tr@se, 3)
+  expect_length(tr@pvalues, 3)
+  expect_length(tr@ci.low, 0)
+  expect_length(tr@ci.up, 0)
+  expect_length(tr@gof, 3)
+  expect_length(tr@gof.names, 3)
+  expect_length(tr@gof.decimal, 3)
+  expect_true("Pseudo R$^2$" %in% tr@gof.names)
+  expect_true("Precision: (phi)" %in% tr@coef.names)
+  expect_equivalent(dim(matrixreg(m)), c(10, 2))
+})
+
+test_that("extract extended-support betareg objects from the betareg package", {
+  testthat::skip_on_cran()
+  skip_if_not_installed("betareg", minimum_version = "3.2.0")
+  require("betareg")
+  set.seed(12345)
+  n <- 200
+  x <- rnorm(n)
+  y <- plogis(1 + 0.5 * x + rnorm(n, sd = 0.5))
+  y[1:5] <- 0
+  y[6:10] <- 1
+  m <- betareg(y ~ x, data = data.frame(y = y, x = x))
+
+  tr <- extract(m)
+  expect_length(tr@coef.names, 4)
+  expect_length(tr@coef, 4)
+  expect_length(tr@se, 4)
+  expect_length(tr@pvalues, 4)
+  expect_length(tr@ci.low, 0)
+  expect_length(tr@ci.up, 0)
+  expect_length(tr@gof, 2)
+  expect_length(tr@gof.names, 2)
+  expect_length(tr@gof.decimal, 2)
+  expect_false("Pseudo R$^2$" %in% tr@gof.names)
+  expect_true("Precision: (phi)" %in% tr@coef.names)
+  expect_true("Exceedence: Log(nu)" %in% tr@coef.names)
+  expect_equivalent(dim(matrixreg(m)), c(11, 2))
+})
+
+test_that("classic and extended betareg models combine in a table", {
+  testthat::skip_on_cran()
+  skip_if_not_installed("betareg", minimum_version = "3.2.0")
+  require("betareg")
+  set.seed(12345)
+  n <- 200
+  x <- rnorm(n)
+  y <- plogis(1 + 0.5 * x + rnorm(n, sd = 0.5))
+  y2 <- y
+  y2[1:5] <- 0
+  y2[6:10] <- 1
+  m1 <- betareg(y ~ x, data = data.frame(y = y, x = x))
+  m2 <- betareg(y2 ~ x, data = data.frame(y2 = y2, x = x))
+
+  m <- matrixreg(list(m1, m2))
+  expect_equivalent(dim(m), c(12, 3))
+  expect_true("Exceedence: Log(nu)" %in% m[, 1])
+  expect_true("Pseudo R^2" %in% m[, 1])
+})
+
+test_that("betareg extract include flags work correctly", {
+  testthat::skip_on_cran()
+  skip_if_not_installed("betareg", minimum_version = "3.2.0")
+  require("betareg")
+  set.seed(12345)
+  n <- 200
+  x <- rnorm(n)
+  y <- plogis(1 + 0.5 * x + rnorm(n, sd = 0.5))
+  y2 <- y
+  y2[1:5] <- 0
+  y2[6:10] <- 1
+  m1 <- betareg(y ~ x, data = data.frame(y = y, x = x))
+  m2 <- betareg(y2 ~ x, data = data.frame(y2 = y2, x = x))
+
+  # classic model without precision
+  tr <- extract(m1, include.precision = FALSE)
+  expect_length(tr@coef.names, 2)
+  expect_false("Precision: (phi)" %in% tr@coef.names)
+
+  # classic model without pseudo R^2
+  tr <- extract(m1, include.pseudors = FALSE)
+  expect_length(tr@gof, 2)
+  expect_false("Pseudo R$^2$" %in% tr@gof.names)
+
+  # extended model without nu
+  tr <- extract(m2, include.nu = FALSE)
+  expect_length(tr@coef.names, 3)
+  expect_false("Exceedence: Log(nu)" %in% tr@coef.names)
+
+  # extended model without precision
+  tr <- extract(m2, include.precision = FALSE)
+  expect_length(tr@coef.names, 3)
+  expect_false("Precision: (phi)" %in% tr@coef.names)
+  expect_true("Exceedence: Log(nu)" %in% tr@coef.names)
+})
+
 # bife (bife) ----
 test_that("extract bife objects from the bife package", {
   testthat::skip_on_cran()
@@ -1332,114 +1442,4 @@ test_that("extract logitr objects from the logitr package", {
   expect_length(tr@gof, 4)
   expect_length(tr@gof.decimal, 4)
   expect_equivalent(dim(matrixreg(mnl_pref)), c(15, 2))
-})
-
-# betareg (betareg) ----
-test_that("extract classic betareg objects from the betareg package", {
-  testthat::skip_on_cran()
-  skip_if_not_installed("betareg", minimum_version = "3.2.0")
-  require("betareg")
-  set.seed(12345)
-  n <- 200
-  x <- rnorm(n)
-  y <- plogis(1 + 0.5 * x + rnorm(n, sd = 0.5))
-  m <- betareg(y ~ x, data = data.frame(y = y, x = x))
-
-  tr <- extract(m)
-  expect_length(tr@coef.names, 3)
-  expect_length(tr@coef, 3)
-  expect_length(tr@se, 3)
-  expect_length(tr@pvalues, 3)
-  expect_length(tr@ci.low, 0)
-  expect_length(tr@ci.up, 0)
-  expect_length(tr@gof, 3)
-  expect_length(tr@gof.names, 3)
-  expect_length(tr@gof.decimal, 3)
-  expect_true("Pseudo R$^2$" %in% tr@gof.names)
-  expect_true("Precision: (phi)" %in% tr@coef.names)
-  expect_equivalent(dim(matrixreg(m)), c(10, 2))
-})
-
-test_that("extract extended-support betareg objects from the betareg package", {
-  testthat::skip_on_cran()
-  skip_if_not_installed("betareg", minimum_version = "3.2.0")
-  require("betareg")
-  set.seed(12345)
-  n <- 200
-  x <- rnorm(n)
-  y <- plogis(1 + 0.5 * x + rnorm(n, sd = 0.5))
-  y[1:5] <- 0
-  y[6:10] <- 1
-  m <- betareg(y ~ x, data = data.frame(y = y, x = x))
-
-  tr <- extract(m)
-  expect_length(tr@coef.names, 4)
-  expect_length(tr@coef, 4)
-  expect_length(tr@se, 4)
-  expect_length(tr@pvalues, 4)
-  expect_length(tr@ci.low, 0)
-  expect_length(tr@ci.up, 0)
-  expect_length(tr@gof, 2)
-  expect_length(tr@gof.names, 2)
-  expect_length(tr@gof.decimal, 2)
-  expect_false("Pseudo R$^2$" %in% tr@gof.names)
-  expect_true("Precision: (phi)" %in% tr@coef.names)
-  expect_true("Exceedence: Log(nu)" %in% tr@coef.names)
-  expect_equivalent(dim(matrixreg(m)), c(11, 2))
-})
-
-test_that("classic and extended betareg models combine in a table", {
-  testthat::skip_on_cran()
-  skip_if_not_installed("betareg", minimum_version = "3.2.0")
-  require("betareg")
-  set.seed(12345)
-  n <- 200
-  x <- rnorm(n)
-  y <- plogis(1 + 0.5 * x + rnorm(n, sd = 0.5))
-  y2 <- y
-  y2[1:5] <- 0
-  y2[6:10] <- 1
-  m1 <- betareg(y ~ x, data = data.frame(y = y, x = x))
-  m2 <- betareg(y2 ~ x, data = data.frame(y2 = y2, x = x))
-
-  m <- matrixreg(list(m1, m2))
-  expect_equivalent(dim(m), c(12, 3))
-  expect_true("Exceedence: Log(nu)" %in% m[, 1])
-  expect_true("Pseudo R^2" %in% m[, 1])
-})
-
-test_that("betareg extract include flags work correctly", {
-  testthat::skip_on_cran()
-  skip_if_not_installed("betareg", minimum_version = "3.2.0")
-  require("betareg")
-  set.seed(12345)
-  n <- 200
-  x <- rnorm(n)
-  y <- plogis(1 + 0.5 * x + rnorm(n, sd = 0.5))
-  y2 <- y
-  y2[1:5] <- 0
-  y2[6:10] <- 1
-  m1 <- betareg(y ~ x, data = data.frame(y = y, x = x))
-  m2 <- betareg(y2 ~ x, data = data.frame(y2 = y2, x = x))
-
-  # classic model without precision
-  tr <- extract(m1, include.precision = FALSE)
-  expect_length(tr@coef.names, 2)
-  expect_false("Precision: (phi)" %in% tr@coef.names)
-
-  # classic model without pseudo R^2
-  tr <- extract(m1, include.pseudors = FALSE)
-  expect_length(tr@gof, 2)
-  expect_false("Pseudo R$^2$" %in% tr@gof.names)
-
-  # extended model without nu
-  tr <- extract(m2, include.nu = FALSE)
-  expect_length(tr@coef.names, 3)
-  expect_false("Exceedence: Log(nu)" %in% tr@coef.names)
-
-  # extended model without precision
-  tr <- extract(m2, include.precision = FALSE)
-  expect_length(tr@coef.names, 3)
-  expect_false("Precision: (phi)" %in% tr@coef.names)
-  expect_true("Exceedence: Log(nu)" %in% tr@coef.names)
 })
