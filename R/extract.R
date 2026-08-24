@@ -642,6 +642,96 @@ setMethod("extract", signature = className("betaor", "mfx"),
           definition = extract.betaor)
 
 
+# -- extract.betareg (betareg) -------------------------------------------------
+
+#' @noRd
+extract.betareg <- function(model, include.precision = TRUE, include.nu = TRUE,
+                            include.pseudors = TRUE, include.loglik = TRUE,
+                            include.nobs = TRUE, ...) {
+
+  s <- summary(model, ...)
+
+  extended <- identical(model$dist, "xbetax") || identical(model$dist, "xbeta")
+  if (extended) {
+    coef.block <- s$coefficients$mu
+  } else {
+    coef.block <- s$coefficients$mean
+  }
+  if (include.precision) {
+    if (extended) {
+      phi <- s$coefficients$phi
+    } else {
+      phi <- s$coefficients$precision
+    }
+    rownames(phi) <- paste("Precision:", rownames(phi))
+    coef.block <- rbind(coef.block, phi)
+  }
+  if (include.nu && !is.null(s$coefficients$nu)) {
+    nu <- s$coefficients$nu
+    rownames(nu) <- paste('Exceedence:', rownames(nu))
+    coef.block <- rbind(coef.block, nu)
+  }
+  names <- rownames(coef.block)
+  co <- coef.block[, 1]
+  se <- coef.block[, 2]
+  pval <- coef.block[, 4]
+
+  gof <- numeric()
+  gof.names <- character()
+  gof.decimal <- logical()
+  if (include.pseudors && is.numeric(model$pseudo.r.squared)) {
+    pseudors <- model$pseudo.r.squared
+    gof <- c(gof, pseudors)
+    gof.names <- c(gof.names, "Pseudo R$^2$")
+    gof.decimal <- c(gof.decimal, TRUE)
+  }
+  if (include.loglik) {
+    lik <- model$loglik
+    gof <- c(gof, lik)
+    gof.names <- c(gof.names, "Log Likelihood")
+    gof.decimal <- c(gof.decimal, TRUE)
+  }
+  if (include.nobs) {
+    n <- nobs(model)
+    gof <- c(gof, n)
+    gof.names <- c(gof.names, "Num. obs.")
+    gof.decimal <- c(gof.decimal, FALSE)
+  }
+
+  tr <- createTexreg(
+    coef.names = names,
+    coef = co,
+    se = se,
+    pvalues = pval,
+    gof.names = gof.names,
+    gof = gof,
+    gof.decimal = gof.decimal
+  )
+  return(tr)
+}
+
+#' \code{\link{extract}} method for \code{betareg} objects
+#'
+#' \code{\link{extract}} method for \code{betareg} objects created by the
+#' \code{\link[betareg]{betareg}} function in the \pkg{betareg} package.
+#'
+#' @param model A statistical model object.
+#' @param include.precision Report precision in the coef block?
+#' @param include.nu Report the exceedence in the coef block?
+#' @param include.pseudors Report pseudo R^2 in the GOF block?
+#' @param include.loglik Report the log likelihood in the GOF block?
+#' @param include.nobs Report the number of observations in the GOF block?
+#' @param ... Custom parameters, which are handed over to subroutines, in this
+#'   case to the \code{summary} method for the object.
+#'
+#' @method extract betareg
+#' @aliases extract.betareg
+#' @author Kevin Navarrete-Parra, Philip Leifeld
+#' @export
+setMethod("extract", signature = className("betareg", "betareg"),
+          definition = extract.betareg)
+
+
 # -- extract.bife (bife) ----------------------------------------------------
 
 #' @noRd
@@ -2011,80 +2101,6 @@ extract.feis <- function(model,
 #' @export
 setMethod("extract", signature = className("feis", "feisr"),
           definition = extract.feis)
-
-
-# -- extract.betareg (betareg) -------------------------------------------------
-
-#' @noRd
-extract.betareg <- function(model, include.precision = TRUE,
-                            include.pseudors = TRUE, include.loglik = TRUE,
-                            include.nobs = TRUE, ...) {
-
-  s <- summary(model, ...)
-
-  coef.block <- s$coefficients$mean
-  if (include.precision == TRUE) {
-    phi <- s$coefficients$precision
-    rownames(phi) <- paste("Precision:", rownames(phi))
-    coef.block <- rbind(coef.block, phi)
-  }
-  names <- rownames(coef.block)
-  co <- coef.block[, 1]
-  se <- coef.block[, 2]
-  pval <- coef.block[, 4]
-
-  gof <- numeric()
-  gof.names <- character()
-  gof.decimal <- logical()
-  if (include.pseudors == TRUE) {
-    pseudors <- model$pseudo.r.squared
-    gof <- c(gof, pseudors)
-    gof.names <- c(gof.names, "Pseudo R$^2$")
-    gof.decimal <- c(gof.decimal, TRUE)
-  }
-  if (include.loglik == TRUE) {
-    lik <- model$loglik
-    gof <- c(gof, lik)
-    gof.names <- c(gof.names, "Log Likelihood")
-    gof.decimal <- c(gof.decimal, TRUE)
-  }
-  if (include.nobs == TRUE) {
-    n <- nobs(model)
-    gof <- c(gof, n)
-    gof.names <- c(gof.names, "Num. obs.")
-    gof.decimal <- c(gof.decimal, FALSE)
-  }
-
-  tr <- createTexreg(
-    coef.names = names,
-    coef = co,
-    se = se,
-    pvalues = pval,
-    gof.names = gof.names,
-    gof = gof,
-    gof.decimal = gof.decimal
-  )
-  return(tr)
-}
-
-#' \code{\link{extract}} method for \code{betareg} objects
-#'
-#' \code{\link{extract}} method for \code{betareg} objects created by the
-#' \code{\link[betareg]{betareg}} function in the \pkg{betareg} package.
-#'
-#' @param model A statistical model object.
-#' @param include.precision Report precision in the GOF block?
-#' @param include.pseudors Report pseudo R^2 in the GOF block?
-#' @param include.loglik Report the log likelihood in the GOF block?
-#' @param include.nobs Report the number of observations in the GOF block?
-#' @param ... Custom parameters, which are handed over to subroutines, in this
-#'   case to the \code{summary} method for the object.
-#'
-#' @method extract betareg
-#' @aliases extract.betareg
-#' @export
-setMethod("extract", signature = className("betareg", "betareg"),
-          definition = extract.betareg)
 
 
 # -- extract.felm (lfe) -----------------------------------------------
