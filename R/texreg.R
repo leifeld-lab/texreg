@@ -714,7 +714,7 @@ knitreg <- function(...) {
   if (is.null(of)) { # R Notebook preview (rendered on the R console)
     screenreg(...) # output ASCII table to console
   } else if (of == "markdown") { # pandoc: R Markdown (.Rmd), which can be rendered to HTML, PDF, or Word; or Quarto (.qmd) document
-    output <- rmarkdown::all_output_formats(knitr::current_input())[1] # get primary target format
+    output <- rmarkdown::all_output_formats(knitr::current_input(dir = TRUE))[1] # get primary target format
     if (is.null(output) || length(output) == 0 || is.na(output)) { # Quarto or .Rpres presentation (not .Rmd) or unrendered stream
       if (knitr::is_latex_output()) { # Quarto (format: pdf or beamer) -> use texreg without in-line packages
         texreg(..., use.packages = FALSE) # do not print \usepackage{dcolumn} etc.
