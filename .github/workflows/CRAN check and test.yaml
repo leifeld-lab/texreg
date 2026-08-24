@@ -29,7 +29,7 @@ jobs:
       R_KEEP_PKG_SOURCE: yes
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v7
 
       - uses: r-lib/actions/setup-tinytex@v2
 
@@ -53,30 +53,22 @@ jobs:
 
       - name: Query dependencies
         run: |
-          install.packages(c("remotes", "devtools", "covr"))
-          saveRDS(remotes::dev_package_deps(dependencies = TRUE), ".github/depends.Rds", version = 2)
+          install.packages("pak")
+          saveRDS(pak::local_dev_deps(dependencies = TRUE), ".github/depends.Rds", version = 2)
           writeLines(sprintf("R-%i.%i", getRversion()$major, getRversion()$minor), ".github/R-version")
         shell: Rscript {0}
 
       - name: Cache R packages
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ${{ env.R_LIBS_USER }}
           key: ${{ runner.os }}-${{ hashFiles('.github/R-version') }}-1-${{ hashFiles('.github/depends.Rds') }}
           restore-keys: ${{ runner.os }}-${{ hashFiles('.github/R-version') }}-1-
 
-      - name: Install system dependencies
-        if: runner.os == 'Linux'
-        run: |
-          while read -r cmd
-          do
-            eval sudo $cmd
-          done < <(Rscript -e 'writeLines(remotes::system_requirements("ubuntu", "20.04"))')
-
       - name: Install dependencies
         run: |
-          remotes::install_cran("rcmdcheck")
-          devtools::install_deps(dependencies = c("Depends", "Imports", "LinkingTo", "Suggests", "Enhances"))
+          pak::pkg_install(c("rcmdcheck", "covr", "testthat", "withr"))
+          pak::local_install_deps(dependencies = TRUE)
         shell: Rscript {0}
 
       - name: Check
@@ -87,13 +79,13 @@ jobs:
 
       - name: Upload check results
         if: failure()
-        uses: actions/upload-artifact@main
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ runner.os }}-r${{ matrix.config.r }}-results
           path: check
 
       - name: Unit testing
-        run: withr::with_envvar(c("NOT_CRAN" = "true"), devtools::test())
+        run: withr::with_envvar(c("NOT_CRAN" = "true"), testthat::test_local())
         shell: Rscript {0}
 
       - name: Test coverage

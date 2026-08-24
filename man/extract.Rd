@@ -47,8 +47,8 @@ model). You can also list the available methods by displaying the
 Users can contribute their own extensions for additional statistical models.
 Examples are contained in the article in the Journal of Statistical Software
 referenced below. Suggestions can be submitted as pull requests at
-\url{https://github.com/leifeld/texreg/pulls} or through the issue tracker at
-\url{https://github.com/leifeld/texreg/issues}.
+\url{https://github.com/leifeld-lab/texreg/pulls} or through the issue tracker at
+\url{https://github.com/leifeld-lab/texreg/issues}.
 }
 \references{
 Leifeld, Philip (2013). texreg: Conversion of Statistical Model
