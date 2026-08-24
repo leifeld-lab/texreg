@@ -1429,7 +1429,7 @@ order to change the GOF statistics block.
 % %
 % Alternatively, the source files and binaries can be downloaded from
 % the \pkg{texreg} homepage
-% (\url{http://r-forge.r-project.org/projects/texreg/}) and installed
+% (\url{https://r-forge.r-project.org/projects/texreg/}) and installed
 % manually by entering something like
 % \begin{Code}
 % $ R CMD INSTALL texreg_1.xx.tar.gz
