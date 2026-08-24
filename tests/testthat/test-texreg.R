@@ -393,6 +393,34 @@ test_that("knitreg chooses correct format in R Markdown and Quarto", {
   expect_equivalent(knitreg(model1), htmlreg(model1, doctype = FALSE, star.symbol = "&#42;"))
 })
 
+test_that("knitreg passes absolute input path to rmarkdown::all_output_formats", {
+  skip_if_not_installed("knitr", minimum_version = "1.22")
+  skip_if_not_installed("rmarkdown", minimum_version = "1.12")
+
+  knitr::opts_knit$set(out.format = "markdown")
+
+  # Simulate knit_root_dir differing from file directory: current_input(dir = TRUE)
+  # returns an absolute path while the bare filename would not be found from the cwd.
+  captured_input <- NULL
+  local_mocked_bindings(
+    current_input = function(dir = FALSE) {
+      if (isTRUE(dir)) "/some/other/dir/report.Rmd" else "report.Rmd"
+    },
+    .package = "knitr"
+  )
+  local_mocked_bindings(
+    all_output_formats = function(input) {
+      captured_input <<- input
+      "html_document"
+    },
+    .package = "rmarkdown"
+  )
+
+  knitreg(model1)
+
+  expect_equal(captured_input, "/some/other/dir/report.Rmd")
+})
+
 test_that("matrixreg function works", {
   expect_equal(nrow(matrixreg(model1)), 8)
   expect_equal(ncol(matrixreg(model1)), 2)
