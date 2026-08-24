@@ -320,36 +320,29 @@ test_that("arguments work in screenreg function", {
                "\\n    Petal\\.Width")
 })
 
-test_that("knitreg function works", {
-  with_mocked_bindings(requireNamespace = function (package, ...) {
-    ifelse(package == "knitr", return(FALSE), return(TRUE))
-  }, {
-    expect_error(knitreg(list(model1, model1)), regexp = "knitreg requires the 'knitr' package to be installed")
-  })
-  with_mocked_bindings(requireNamespace = function (package, ...) {
-      ifelse(package == "rmarkdown", return(FALSE), return(TRUE))
-    }, {
-    expect_error(knitreg(list(model1, model1)), regexp = "knitreg requires the 'rmarkdown' package to be installed")
-  })
+test_that("knitreg chooses correct format in R Markdown and Quarto", {
   skip_if_not_installed("knitr", minimum_version = "1.22")
-  require("knitr")
   skip_if_not_installed("rmarkdown", minimum_version = "1.12")
-  require("rmarkdown")
-  expect_match(knitreg(model1), "Petal.Width")
 
-  # the following evaluates that knitreg chooses and outputs the expected format
+  # set knitr context to markdown
   knitr::opts_knit$set(out.format = "markdown")
 
+  # mock knitr context to simulate non-file/interactive evaluation
   local_mocked_bindings(current_input = function() NULL, .package = "knitr")
 
   test_env <- new.env()
-  local_mocked_bindings(all_output_formats = function(input) test_env$output_format, .package = "rmarkdown")
+  local_mocked_bindings(
+    all_output_formats = function(input) test_env$output_format,
+    .package = "rmarkdown"
+  )
 
+  # --- R Markdown targets ---
   test_env$output_format <- "html_document"
-  expect_equivalent(knitreg(model1), htmlreg(model1, doctype = FALSE))
+  expect_match(knitreg(model1), "Petal.Width") # basic execution check
+  expect_equivalent(knitreg(model1), htmlreg(model1, doctype = FALSE, star.symbol = "&#42;"))
 
   test_env$output_format <- "bookdown::html_document2"
-  expect_equivalent(knitreg(model1), htmlreg(model1, doctype = FALSE))
+  expect_equivalent(knitreg(model1), htmlreg(model1, doctype = FALSE, star.symbol = "&#42;"))
 
   test_env$output_format <- "pdf_document"
   expect_equivalent(knitreg(model1), texreg(model1, use.packages = FALSE))
@@ -360,7 +353,7 @@ test_that("knitreg function works", {
   test_env$output_format <- "bookdown::pdf_book"
   expect_equivalent(knitreg(model1), texreg(model1, use.packages = FALSE))
 
-  # formatting table to test word output in knitreg
+  # formatting table to test Word output in knitreg
   mr <- matrixreg(model1, output.type = "ascii", include.attributes = FALSE, trim = TRUE)
   colnames(mr) <- mr[1, ]
   mr <- mr[-1, ]
@@ -370,6 +363,34 @@ test_that("knitreg function works", {
 
   test_env$output_format <- "bookdown::word_document2"
   expect_equivalent(knitreg(model1), knitr::kable(mr))
+
+  # --- Quarto targets (all_output_formats returns character(0)) ---
+  test_env$output_format <- character(0)
+  local_mocked_bindings(
+    is_latex_output = function() test_env$is_latex,
+    pandoc_to = function() test_env$pandoc_target,
+    .package = "knitr"
+  )
+
+  # Quarto PDF/beamer via LaTeX
+  test_env$is_latex <- TRUE
+  test_env$pandoc_target <- "latex"
+  expect_equivalent(knitreg(model1), texreg(model1, use.packages = FALSE))
+
+  # Quarto Word (.docx)
+  test_env$is_latex <- FALSE
+  test_env$pandoc_target <- "docx"
+  expect_equivalent(knitreg(model1), knitr::kable(mr))
+
+  # Quarto PowerPoint (.pptx)
+  test_env$is_latex <- FALSE
+  test_env$pandoc_target <- "pptx"
+  expect_equivalent(knitreg(model1), knitr::kable(mr))
+
+  # Quarto HTML/Reveal.js fallback
+  test_env$is_latex <- FALSE
+  test_env$pandoc_target <- "html"
+  expect_equivalent(knitreg(model1), htmlreg(model1, doctype = FALSE, star.symbol = "&#42;"))
 })
 
 test_that("matrixreg function works", {

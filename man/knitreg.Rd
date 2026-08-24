@@ -23,7 +23,12 @@ This function automatically selects the right function (\link{texreg},
 arguments for use with the \pkg{knitr} package, for example in RStudio. The
 advantage of using this function with \pkg{knitr} is that the user does not
 need to replace the \link{texreg}, \link{htmlreg} etc. function call in the
-document when a different output format is selected.
+document when a different output format is selected. \pkg{knitr} can be used
+directly for compiling \code{.Rnw} documents (integrating R code directly
+into LaTeX), with the \pkg{rmarkdown} package (integrating R code into
+Markdown and then calling Pandoc to create PDF via LaTeX, HTML, or Word
+\code{.docx}), or with Quarto (integrating R code and Quarto markup into
+Markdown and then calling Pandoc).
 
 \link{knitreg} works with...
 \itemize{
@@ -43,12 +48,19 @@ document when a different output format is selected.
       \item Presentations (\code{.Rpres} extension, not \code{.Rmd})
     }
   \item \R Notebooks, including preview
+  \item Quarto documents (\code{.qmd} extension), rendered as...
+    \itemize{
+      \item HTML documents
+      \item PDF documents
+      \item Word documents
+      \item Other output formats offered by Pandoc.
+    }
 }
 
-If Markdown and HTML rendering are selected, \link{htmlreg} arguments
+If Markdown/Quarto and HTML rendering are selected, \link{htmlreg} arguments
 \code{doctype = FALSE} and \code{star.symbol = "&#42;"} are set to enable
-compatibility with Markdown. With \R HTML documents (but not Markdown) or
-presentations (\code{.Rpres} extension), only \code{doctype = FALSE} is set.
+compatibility with Markdown/Quarto. With \R HTML documents (but not Markdown)
+or \code{.Rpres} presentations, only \code{doctype = FALSE} is set.
 
 For PDF/LaTeX documents, the \link{texreg} argument
 \code{use.packages = FALSE} is set to suppress any package loading
