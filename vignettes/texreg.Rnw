@@ -11,7 +11,7 @@
 
 \graphicspath{{Figures/}}
 
-\author{Philip Leifeld \\ University of Essex}
+\author{Philip Leifeld \\ University of Manchester}
 \Plainauthor{Philip Leifeld}
 
 \title{\pkg{texreg}: Conversion of Statistical Model Output in \proglang{R} to {\LaTeX} and HTML Tables}
@@ -46,13 +46,13 @@
 
 \Address{
   Philip Leifeld\\
-  Department of Government\\
-  University of Essex\\
-  Wivenhoe Park\\
-  Colchester, CO4~6BW\\
+  Department of Social Statistics\\
+  University of Manchester\\
+  Humanities Bridgeford Street Building\\
+  Manchester, M13~9PL\\
   United Kingdom\\
-  E-mail: \email{philip.leifeld@essex.ac.uk}\\
-  URL: \url{http://www.philipleifeld.com}
+  E-mail: \email{philip.leifeld@manchester.ac.uk}\\
+  URL: \url{https://www.philipleifeld.com}
 }
 
 
@@ -146,7 +146,7 @@ closes this gap and provides a unified framework for typesetting
 {\LaTeX} and HTML tables for various statistical
 models in \proglang{R}. Package \pkg{texreg} is available from
 the Comprehensive \proglang{R} Archive Network (CRAN) at
-\url{http://CRAN.R-project.org/package=texreg}.
+\url{https://CRAN.R-project.org/package=texreg}.
 
 The remainder of this article is structured as follows:
 Section~\ref{requirements} sets out a number of requirements which
@@ -287,8 +287,6 @@ In other situations, it may be important to
   standard errors are used \citep{zeileis2004econometric}.
 \end{inparaenum}
 
-\pagebreak
-
 \LTcapwidth=\textwidth
 \begin{center}
 \begin{longtable}{l l l l l}
@@ -416,8 +414,6 @@ regard, both packages are somewhat similar to the \pkg{texreg}
 package.  \pkg{texreg}, however, offers more straightforward ways of
 custom model implementation.  This important feature is notably absent
 from \pkg{stargazer}.
-
-\pagebreak
 
 \begin{center}
 \begin{longtable}{l l l}
@@ -553,8 +549,6 @@ requirements (Section~\ref{specific}), and customizability
 \section[Under the hood: How texreg works]{Under the hood: How
   \pkg{texreg} works} \label{description} The \pkg{texreg} package
 consists of three main functions:
-
-\pagebreak
 
 \begin{enumerate}
 \item \code{texreg()} for {\LaTeX} output;
@@ -1421,7 +1415,7 @@ order to change the GOF statistics block.
 % %
 % \begin{Schunk}
 % \begin{Sinput}
-% R> install.packages("texreg", repos = "http://R-Forge.R-project.org")
+% R> install.packages("texreg", repos = "https://R-Forge.R-project.org")
 % \end{Sinput}
 % \end{Schunk}
 % %
@@ -1429,7 +1423,7 @@ order to change the GOF statistics block.
 % %
 % \begin{Schunk}
 % \begin{Sinput}
-% R> update.packages("texreg", repos = "http://R-Forge.R-project.org")
+% R> update.packages("texreg", repos = "https://R-Forge.R-project.org")
 % \end{Sinput}
 % \end{Schunk}
 % %
@@ -1472,7 +1466,7 @@ order to change the GOF statistics block.
 % %
 % If all else fails, more help can be obtained from the homepage of the
 % \pkg{texreg} package.  Questions can be posted to a public forum at
-% \url{http://r-forge.r-project.org/projects/texreg/}.
+% \url{https://r-forge.r-project.org/projects/texreg/}.
 
 \section*{Acknowledgments}
 The author would like to thank Oleg Badunenko, Tom Carsey, S.\,Q. Chang,
