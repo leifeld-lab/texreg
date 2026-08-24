@@ -24,6 +24,7 @@ Imports: methods, stats, httr
 Enhances:
   AER,
   alpaca,
+  apollo (>= 0.3.0),
   betareg,
   Bergm,
   bife,
