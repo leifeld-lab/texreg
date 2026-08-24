@@ -32,6 +32,7 @@ wordreg(
   groups = NULL,
   custom.columns = NULL,
   custom.col.pos = NULL,
+  caption = NULL,
   ...
 )
 }
@@ -303,6 +304,10 @@ remaining two custom columns after the second column of the original table.
 By default, all custom columns are placed after the first column, which
 usually contains the coefficient names.}
 
+\item{caption}{The caption for the table. Needs to be supplied as a single
+character object. Note that "Table 1: ", "Table 2: ", etc. is not included
+and needs to be added manually to the caption if desired.}
+
 \item{...}{Custom options to be passed on to the \code{\link{extract}}
 function. For example, most extract methods provide custom options for the
 inclusion or exclusion of specific goodness-of-fit statistics. See the help
@@ -342,6 +347,6 @@ Other texreg:
 \code{\link{texreg}}
 }
 \author{
-Vincent Arel-Bundock
+Vincent Arel-Bundock, Philip Leifeld
 }
 \concept{texreg}

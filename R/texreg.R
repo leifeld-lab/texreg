@@ -705,6 +705,11 @@ knitreg <- function(...) {
     stop("knitreg requires the 'rmarkdown' package to be installed.\n",
          "To do this, enter 'install.packages(\"rmarkdown\")'.")
   }
+
+  # save caption for Word
+  dots <- list(...)
+  cap <- if ("caption" %in% names(dots)) dots$caption else NULL
+
   of <- knitr::opts_knit$get("out.format") # get output format from knitr options
   if (is.null(of)) { # R Notebook preview (rendered on the R console)
     screenreg(...) # output ASCII table to console
@@ -717,7 +722,7 @@ knitreg <- function(...) {
         mr <- matrixreg(..., output.type = "ascii", include.attributes = FALSE, trim = TRUE) # get clean matrix representation
         colnames(mr) <- mr[1, ] # set column names because we want 'kable' to draw a horizontal line under the model names
         mr <- mr[-1, ] # remove the first row because we already set the model names as column names
-        knitr::kable(mr) # use the kable function to render the table in the Word/PowerPoint document
+        knitr::kable(mr, caption = cap) # use the kable function to render the table in the Word/PowerPoint document
       } else { # Quarto rendered to HTML, Reveal.js, or presentation slides
         htmlreg(..., doctype = FALSE, star.symbol = "&#42;") # do not include document type because inline table; the star symbol must be escaped in Markdown/HTML
       }
@@ -729,7 +734,7 @@ knitreg <- function(...) {
       mr <- matrixreg(..., output.type = "ascii", include.attributes = FALSE, trim = TRUE) # get clean matrix representation
       colnames(mr) <- mr[1, ] # set column names because we want 'kable' to draw a horizontal line under the model names
       mr <- mr[-1, ] # remove the first row because we already set the model names as column names
-      knitr::kable(mr) # use the kable function to render the table in the Word/Powerpoint document
+      knitr::kable(mr, caption = cap) # use the kable function to render the table in the Word/Powerpoint document
     } else { # unknown other output format through the rmarkdown package
       htmlreg(..., doctype = FALSE)
     } # after this: non-pandoc legacy rendering engines and LaTeX with knitr
@@ -3748,10 +3753,13 @@ texreg <- function(l,
 #' The \code{wordreg} function creates a Microsoft Word document with the
 #' requested table.
 #'
+#' @param caption The caption for the table. Needs to be supplied as a single
+#'   character object. Note that "Table 1: ", "Table 2: ", etc. is not included
+#'   and needs to be added manually to the caption if desired.
 #' @inheritParams matrixreg
 #' @inheritParams texreg
 #'
-#' @author Vincent Arel-Bundock
+#' @author Vincent Arel-Bundock, Philip Leifeld
 #' @family texreg
 #' @seealso \code{\link{texreg-package}} \code{\link{extract}}
 #'
@@ -3796,6 +3804,7 @@ wordreg <- function(l,
                     groups = NULL,
                     custom.columns = NULL,
                     custom.col.pos = NULL,
+                    caption = NULL,
                     ...) {
 
   if (!requireNamespace("rmarkdown", quietly = TRUE)) {
@@ -3804,6 +3813,19 @@ wordreg <- function(l,
   }
   if (is.null(file)) {
     stop("'file' must be a valid file path.")
+  }
+  if (!is.null(caption)){
+    if (is.na(caption)) {
+      caption <- NULL
+    } else if (!is.character(caption)) {
+      caption <- as.character(caption)
+      warning("Caption converted to character object.")
+    } else if (length(caption) == 0) {
+      caption <- NULL
+    } else if (length(caption) > 1) {
+      caption <- paste0(caption, collapse = "")
+      warning("Multiple captions provided. They are collapsed into a single string.")
+    }
   }
   mat <- matrixreg(l,
                    single.row = single.row,
@@ -3845,7 +3867,7 @@ wordreg <- function(l,
     dvnames <- NA
   }
   cat(file = f, "```{r, echo = FALSE}
-                    knitr::kable(mat, col.names = dvnames)
+                    knitr::kable(mat, col.names = dvnames, caption = caption)
                     ```", append = TRUE)
   rmarkdown::render(f, output_file = paste0(wd, "/", file))
 }
