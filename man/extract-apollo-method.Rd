@@ -5,14 +5,29 @@
 \alias{extract.apollo}
 \title{\code{\link{extract}} method for \code{apollo} objects}
 \usage{
-\S4method{extract}{apollo}(model, wtpest = NULL, se = "rob", ...)
+\S4method{extract}{apollo}(
+  model,
+  wtpest = NULL,
+  se = "rob",
+  include.loglik = TRUE,
+  include.nobs = TRUE,
+  ...
+)
 }
 \arguments{
 \item{model}{An object of class \code{apollo}.}
 
-\item{wtpest}{Optional data.frame of willingness-to-pay estimates (and s.e.'s).}
+\item{wtpest}{Optional \code{data.frame} of willingness-to-pay estimates
+(and standard errors).}
 
-\item{se}{Which standard errors to use: \code{"rob"}, \code{"normal"}, or \code{"bs"}.}
+\item{se}{Which standard errors to use: \code{"rob"}, \code{"normal"}, or
+\code{"bs"}.}
+
+\item{include.loglik}{Report the log likelihood (including for the null
+model) in the GOF block?}
+
+\item{include.nobs}{Report the number of observations and individuals in the
+GOF block?}
 
 \item{...}{Currently ignored.}
 }
@@ -21,5 +36,5 @@
 \code{apollo::apollo_estimate()}.
 }
 \author{
-Julian Sagebiel <julian.sagebiel@idiv.de>
+Julian Sagebiel \email{julian.sagebiel@idiv.de}, Philip Leifeld
 }
